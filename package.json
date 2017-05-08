@@ -1,0 +1,25 @@
+{
+  "name": "mz-deploy",
+  "version": "0.0.1",
+  "description": "Deploy files to i18n server base on i18n-*-build repo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mz-team/mz-deploy.git"
+  },
+  "dependencies": {
+    "colors": "^1.1.2",
+    "dateformat": "^2.0.0",
+    "request": "^2.81.0"
+  },
+  "keywords": [
+    "mz",
+    "fis3",
+    "i18n"
+  ],
+  "author": "kaiye",
+  "license": "ISC"
+}
