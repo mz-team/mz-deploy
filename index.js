@@ -55,6 +55,10 @@ const getFileMeta = (function () {
   }
 })()
 
+const md5 = (str) =>{
+  return crypto.createHash('md5').update(crypto.createHash('md5').update(str).digest('hex')).digest('hex')
+}
+
 const upload = function (filepath, callback, isFirstRequest) {
   const fileMeta = getFileMeta(filepath)
   const now = new Date() - 0
@@ -63,7 +67,7 @@ const upload = function (filepath, callback, isFirstRequest) {
     lang: fileMeta.lang,
     email: config.email,
     t: now,
-    token: crypto.createHash('md5').update(now + config.token).digest('hex'),
+    token: md5(now + config.token),
     domain: config.domain,
     to: fileMeta.distPath,
     file: {
@@ -122,13 +126,13 @@ module.exports = function (c) {
   config = Object.assign(config, c)
 
   return new Promise((resolve, reject) => {
-    let fileList = config.fileList.slice(0, 10)
+    let fileList = config.fileList
       .filter(filepath => /^source/.test(filepath))
     let completeNum = 0
     let success = []
     let fail = []
 
-    if(config.forceClean &&  execSync('git status -s | wc -l').toString().trim()){
+    if(config.forceClean &&  execSync('git status -s | wc -l').toString().trim() !== '0'){
       reject('FILES_SHOULD_BE_COMMITTED_BEFORE_DEPLOY')
       return false;
     }
@@ -142,14 +146,16 @@ module.exports = function (c) {
       if (err === 'TOKEN_INVALID') {
         reject(err)
       }else {
-        fileList.map((filepath) => {
-          upload(filepath, (err, distpath) => {
-            err ? fail.push(distpath) : success.push(distpath)
-            completeNum++
-            if (completeNum === fileList.length) {
-              resolve({success, fail})
-            }
-          })
+        fileList.map((filepath, index) => {
+          setTimeout(function(){
+            upload(filepath, (err, distpath) => {
+              err ? fail.push(distpath) : success.push(distpath)
+              completeNum++
+              if (completeNum === fileList.length) {
+                resolve({success, fail})
+              }
+            })
+          }, index * 50)
         })
       }
     }, true)
