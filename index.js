@@ -110,6 +110,7 @@ const env = process.argv[2] || 'sqa'
 let config = {
   fileList: execSync('git log --pretty=format:"" --name-only  -1').toString().split('\n'),
   domain: process.env.npm_package_deploy_config_domain,
+  forceClean: true,
   cdn: process.env.npm_package_deploy_config_cdn,
   receiver: process.env[`npm_package_deploy_config_${env}_url`],
   token: process.env[`npm_package_deploy_config_${env}_token`] || process.env.MZ_FIS_MANAGE_SECRET,
@@ -127,7 +128,15 @@ module.exports = function (c) {
     let success = []
     let fail = []
 
-    if(!fileList.length) return
+    if(config.forceClean &&  execSync('git status -s | wc -l').toString().trim()){
+      reject('FILES_SHOULD_BE_COMMITTED_BEFORE_DEPLOY')
+      return false;
+    }
+
+    if(!fileList.length){
+      reject('FILE_LIST_IS_EMPTY')
+      return false;
+    }
 
     upload(fileList[0], (err) => {
       if (err === 'TOKEN_INVALID') {
