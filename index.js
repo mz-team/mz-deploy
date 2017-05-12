@@ -95,10 +95,16 @@ const upload = function (filepath) {
       } else if (body === '验证失败') {
         errormsg = 'TOKEN_INVALID'
         reject(errormsg)
-      } else if (body.includes('conflict')) {
-        errormsg = 'FILE_CONFLICT'
+      } else if (typeof body === 'string') {
+        if (body.includes('conflict')) {
+          errormsg = 'FILE_CONFLICT'
+        } else {
+          errormsg = 'UNEXPECTED_RESPONSE'
+          reject(errormsg)
+        }
       } else {
-        errormsg = 'REQUEST_ERROR'
+        errormsg = err.errno
+        reject(errormsg)
       }
 
       let msg = `${time.gray} ${fileMeta.distPath} `
@@ -135,31 +141,21 @@ module.exports = function (c) {
   config.fileList = config.fileList
     .filter(filepath => /^source/.test(filepath))
 
-  return new Promise((resolve, reject) => {
-
+  return co(function* () {
     if (config.forceClean && execSync('git status -s | wc -l').toString().trim() !== '0') {
-      reject('FILES_SHOULD_BE_COMMITTED_BEFORE_DEPLOY')
-      return false;
+      throw 'FILES_SHOULD_BE_COMMITTED_BEFORE_DEPLOY'
     }
-
     if (!config.fileList.length) {
-      reject('FILE_LIST_IS_EMPTY')
-      return false;
+      throw 'FILE_LIST_IS_EMPTY'
     }
-
-    co(function* () {
-      let success = []
-      let fail = []
-
-      for (let i = 0; i < config.fileList.length; i++) {
-        let filepath = config.fileList[i]
-        let ret = yield upload(filepath)
-        ret.error ? fail.push(ret.data) : success.push(ret.data)
-      }
-      return { success, fail }
-    }).then((data) => {
-      resolve(data)
-    })
-
+    let success = []
+    let fail = []
+    
+    for (let i = 0; i < config.fileList.length; i++) {
+      let filepath = config.fileList[i]
+      let ret = yield upload(filepath)
+      ret.error ? fail.push(ret.data) : success.push(ret.data)
+    }
+    return { success, fail }
   })
 }

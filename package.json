@@ -1,6 +1,6 @@
 {
   "name": "mz-deploy",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Deploy files to i18n server base on i18n-*-build repo",
   "main": "index.js",
   "scripts": {
